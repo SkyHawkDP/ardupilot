@@ -105,6 +105,8 @@ static NOINLINE void send_heartbeat(mavlink_channel_t chan)
         MAV_TYPE_OCTOROTOR,
 #elif (FRAME_CONFIG == HELI_FRAME)
         MAV_TYPE_HELICOPTER,
+#elif (FRAME_CONFIG == SINGLE_FRAME)  //because mavlink did not define a singlecopter, we use a rocket
+        MAV_TYPE_ROCKET,
 #else
   #error Unrecognised frame type
 #endif
@@ -193,6 +195,9 @@ static NOINLINE void send_extended_status1(mavlink_channel_t chan, uint16_t pack
     }
     if (ap.rc_receiver_present && !failsafe.radio) {
         control_sensors_health |= MAV_SYS_STATUS_SENSOR_RC_RECEIVER;
+    }
+    if (!ins.healthy()) {
+        control_sensors_health &= ~(MAV_SYS_STATUS_SENSOR_3D_GYRO | MAV_SYS_STATUS_SENSOR_3D_ACCEL);
     }
 
     int16_t battery_current = -1;
@@ -1475,8 +1480,10 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         mavlink_msg_param_request_list_decode(msg, &packet);
         if (mavlink_check_target(packet.target_system,packet.target_component)) break;
 
-        // Start sending parameters - next call to ::update will kick the first one out
+        // mark the firmware version in the tlog
+        send_text_P(SEVERITY_LOW, PSTR(FIRMWARE_STRING));
 
+        // Start sending parameters - next call to ::update will kick the first one out
         _queued_parameter = AP_Param::first(&_queued_parameter_token, &_queued_parameter_type);
         _queued_parameter_index = 0;
         _queued_parameter_count = _count_parameters();
