@@ -94,7 +94,7 @@ static void init_ardupilot()
     // standard gps running
     hal.uartB->begin(115200, 256, 16);
 
-	cliSerial->printf_P(PSTR("\n\nInit " THISFIRMWARE
+	cliSerial->printf_P(PSTR("\n\nInit " FIRMWARE_STRING
 						 "\n\nFree RAM: %u\n"),
                     memcheck_available_memory());
                     
@@ -252,6 +252,8 @@ static void set_mode(enum mode mode)
 	control_mode = mode;
     throttle_last = 0;
     throttle = 500;
+    in_reverse = false;
+    g.pidSpeedThrottle.reset_I();
 
     if (control_mode != AUTO) {
         auto_triggered = false;
@@ -370,7 +372,6 @@ static void resetPerfData(void) {
 	ahrs.renorm_range_count 	= 0;
 	ahrs.renorm_blowup_count = 0;
 	gps_fix_count 			= 0;
-	pmTest1					= 0;
 	perf_mon_timer 			= millis();
 }
 
